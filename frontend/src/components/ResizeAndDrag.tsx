@@ -17,7 +17,7 @@ type Direction =
 export default function ResizeAndDrag({ children }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [position, setPosition] = useState({ x: 100, y: 100 });
+  const [position, setPosition] = useState({ x: 500, y: 100 });
   const [size, setSize] = useState({ width: 200, height: 100 });
 
   const isDragging = useRef(false);
@@ -115,7 +115,7 @@ export default function ResizeAndDrag({ children }: Props) {
   return (
     <div
       ref={containerRef}
-      className="absolute border border-blue-500 bg-white select-none"
+      className="absolute border border-blue-500 bg-transparent select-none"
       style={{
         left: position.x,
         top: position.y,
