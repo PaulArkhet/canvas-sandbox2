@@ -3,6 +3,22 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { serveStatic } from "hono/bun";
 import { serve } from "bun";
+const cron = require("cron");
+const https = require("https");
+
+const backendUrl = "https://canvas-sandbox2.onrender.com";
+const job = new cron.CronJob("*/14 * * * *", () => {
+  console.log("restarting server");
+  https.get(backendUrl, (res: any) => {
+    if (res.statusCode === 200) {
+      console.log("Server restarted");
+    } else {
+      console.log("failed to restart");
+    }
+  });
+});
+
+job.start();
 
 const app = new Hono();
 const PORT = parseInt(process.env.PORT!) || 3333;

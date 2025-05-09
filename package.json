@@ -12,6 +12,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "cron": "^4.3.0",
     "hono": "^4.7.9"
   }
 }
