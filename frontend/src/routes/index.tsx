@@ -86,8 +86,12 @@ function RouteComponent() {
         x={400}
         y={200}
         setSelectedIds={setSelectedIds}
+        width={100}
+        height={50}
       >
-        <button className="pointer-events-auto">BUTTON</button>
+        <div className="relative w-full h-full flex items-center flex-col text-left rounded justify-center bg-white text-black [container-type:size]">
+          <button className="pointer-events-auto">BUTTON</button>
+        </div>
       </ResizeAndDrag>
       <ResizeAndDrag
         id="b"
@@ -96,6 +100,8 @@ function RouteComponent() {
         x={600}
         y={400}
         setSelectedIds={setSelectedIds}
+        width={100}
+        height={50}
       >
         <div>SOME TEXT</div>
       </ResizeAndDrag>

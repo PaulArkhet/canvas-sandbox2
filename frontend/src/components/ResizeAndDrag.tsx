@@ -18,6 +18,8 @@ export default function ResizeAndDrag({
   x,
   y,
   setSelectedIds,
+  width,
+  height,
 }: {
   children: React.ReactNode;
   id: string;
@@ -26,10 +28,12 @@ export default function ResizeAndDrag({
   x: number;
   y: number;
   setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>;
+  width: number;
+  height: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: x, y: y });
-  const [size, setSize] = useState({ width: 200, height: 100 });
+  const [size, setSize] = useState({ width: width, height: height });
   const isDragging = useRef(false);
   const resizeDir = useRef<Direction | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
