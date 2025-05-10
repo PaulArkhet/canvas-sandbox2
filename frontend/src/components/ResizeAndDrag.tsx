@@ -1,9 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
 
-type Props = {
-  children: React.ReactNode;
-};
-
 type Direction =
   | "top"
   | "bottom"
@@ -14,12 +10,24 @@ type Direction =
   | "bottom-left"
   | "bottom-right";
 
-export default function ResizeAndDrag({ children }: Props) {
+export default function ResizeAndDrag({
+  children,
+  id,
+  isSelected,
+  onRefUpdate,
+  x,
+  y,
+}: {
+  children: React.ReactNode;
+  id: string;
+  isSelected?: boolean;
+  onRefUpdate?: (id: string, ref: HTMLDivElement | null) => void;
+  x: number;
+  y: number;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const [position, setPosition] = useState({ x: 500, y: 100 });
+  const [position, setPosition] = useState({ x: x, y: y });
   const [size, setSize] = useState({ width: 200, height: 100 });
-
   const isDragging = useRef(false);
   const resizeDir = useRef<Direction | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
