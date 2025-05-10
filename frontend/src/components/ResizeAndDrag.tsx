@@ -85,10 +85,10 @@ export default function ResizeAndDrag({ children }: Props) {
       }
     };
 
-    const handleMouseUp = () => {
+    function handleMouseUp() {
       isDragging.current = false;
       resizeDir.current = null;
-    };
+    }
 
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
@@ -98,24 +98,26 @@ export default function ResizeAndDrag({ children }: Props) {
     };
   }, [size, position]);
 
-  const startDrag = (e: React.MouseEvent) => {
+  function startDrag(e: React.MouseEvent) {
     e.stopPropagation();
     isDragging.current = true;
     dragOffset.current = {
       x: e.clientX - position.x,
       y: e.clientY - position.y,
     };
-  };
+  }
 
-  const startResize = (dir: Direction) => (e: React.MouseEvent) => {
-    e.stopPropagation();
-    resizeDir.current = dir;
-  };
+  function startResize(dir: Direction) {
+    return function (e: React.MouseEvent) {
+      e.stopPropagation();
+      resizeDir.current = dir;
+    };
+  }
 
   return (
     <div
       ref={containerRef}
-      className="absolute border border-blue-500 bg-transparent select-none"
+      className="absolute border-[2px] border-[#70acdc] bg-transparent select-none"
       style={{
         left: position.x,
         top: position.y,
@@ -146,19 +148,19 @@ export default function ResizeAndDrag({ children }: Props) {
 
       {/* Corner handles */}
       <div
-        className="absolute top-0 left-0 w-3 h-3 bg-blue-500 cursor-nw-resize"
+        className="absolute top-[-6px] left-[-6px] w-2 h-2 border border-[#70acdc] bg-[#2c2c2c] cursor-nw-resize"
         onMouseDown={startResize("top-left")}
       />
       <div
-        className="absolute top-0 right-0 w-3 h-3 bg-blue-500 cursor-ne-resize"
+        className="absolute top-[-6px] right-[-6px] w-2 h-2 border border-[#70acdc] bg-[#2c2c2c] cursor-ne-resize"
         onMouseDown={startResize("top-right")}
       />
       <div
-        className="absolute bottom-0 left-0 w-3 h-3 bg-blue-500 cursor-sw-resize"
+        className="absolute bottom-[-6px] left-[-6px] w-2 h-2 border border-[#70acdc] bg-[#2c2c2c] cursor-sw-resize"
         onMouseDown={startResize("bottom-left")}
       />
       <div
-        className="absolute bottom-0 right-0 w-3 h-3 bg-blue-500 cursor-se-resize"
+        className="absolute bottom-[-6px] right-[-6px] w-2 h-2 border border-[#70acdc] bg-[#2c2c2c] cursor-se-resize"
         onMouseDown={startResize("bottom-right")}
       />
     </div>
