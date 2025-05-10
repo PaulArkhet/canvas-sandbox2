@@ -25,6 +25,13 @@ function RouteComponent() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const componentRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
+  const [componentPositions, setComponentPositions] = useState<
+    Record<string, { x: number; y: number }>
+  >({
+    a: { x: 400, y: 200 },
+    b: { x: 600, y: 400 },
+  });
+
   function handleMouseDown(e: React.MouseEvent) {
     if (e.target !== containerRef.current) return;
     setStartPos({ x: e.clientX, y: e.clientY });
@@ -67,6 +74,38 @@ function RouteComponent() {
     setSelectBox(null);
   }
 
+  function handleGroupDrag(id: string, deltaX: number, deltaY: number) {
+    if (selectedIds.includes(id)) {
+      setComponentPositions((prev) => {
+        const updated = { ...prev };
+
+        // Update all selected components
+        selectedIds.forEach((selectedId) => {
+          if (updated[selectedId]) {
+            updated[selectedId] = {
+              x: updated[selectedId].x + deltaX,
+              y: updated[selectedId].y + deltaY,
+            };
+          }
+        });
+
+        return updated;
+      });
+    }
+  }
+
+  function handleComponentClick(id: string, e: React.MouseEvent) {
+    if (e.ctrlKey || e.metaKey || e.shiftKey) {
+      setSelectedIds((prev) =>
+        prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      );
+    } else {
+      if (!selectedIds.includes(id)) {
+        setSelectedIds([id]);
+      }
+    }
+  }
+
   const updateRef = (id: string, ref: HTMLDivElement | null) => {
     componentRefs.current[id] = ref;
   };
@@ -83,28 +122,36 @@ function RouteComponent() {
         id="a"
         isSelected={selectedIds.includes("a")}
         onRefUpdate={updateRef}
-        x={400}
-        y={200}
+        x={componentPositions.a?.x || 400}
+        y={componentPositions.a?.y || 200}
+        position={componentPositions.a}
         setSelectedIds={setSelectedIds}
+        onClick={handleComponentClick}
         width={100}
         height={50}
+        onGroupDrag={handleGroupDrag}
       >
         <div className="relative w-full h-full flex items-center flex-col text-left rounded justify-center bg-white text-black [container-type:size]">
           <button className="pointer-events-auto">BUTTON</button>
         </div>
       </ResizeAndDrag>
+
       <ResizeAndDrag
         id="b"
         isSelected={selectedIds.includes("b")}
         onRefUpdate={updateRef}
-        x={600}
-        y={400}
+        x={componentPositions.b?.x || 600}
+        y={componentPositions.b?.y || 400}
+        position={componentPositions.b}
         setSelectedIds={setSelectedIds}
+        onClick={handleComponentClick}
         width={100}
         height={50}
+        onGroupDrag={handleGroupDrag}
       >
         <div>SOME TEXT</div>
       </ResizeAndDrag>
+
       {selectBox && (
         <div
           className="absolute border border-purple-200 bg-purple-500 opacity-10 pointer-events-none"

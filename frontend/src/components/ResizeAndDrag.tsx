@@ -20,6 +20,9 @@ export default function ResizeAndDrag({
   setSelectedIds,
   width,
   height,
+  onGroupDrag,
+  position,
+  onClick,
 }: {
   children: React.ReactNode;
   id: string;
@@ -30,21 +33,42 @@ export default function ResizeAndDrag({
   setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>;
   width: number;
   height: number;
+  onGroupDrag?: (id: string, deltaX: number, deltaY: number) => void;
+  position?: { x: number; y: number };
+  onClick?: (id: string, e: React.MouseEvent) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: x, y: y });
+  const [positionState, setPosition] = useState({
+    x: position?.x ?? x,
+    y: position?.y ?? y,
+  });
   const [size, setSize] = useState({ width: width, height: height });
   const isDragging = useRef(false);
   const resizeDir = useRef<Direction | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
+    if (position) {
+      setPosition(position);
+    }
+  }, [position]);
+
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging.current) {
-        setPosition({
-          x: e.clientX - dragOffset.current.x,
-          y: e.clientY - dragOffset.current.y,
-        });
+        const newX = e.clientX - dragOffset.current.x;
+        const newY = e.clientY - dragOffset.current.y;
+
+        // Calculate the delta from the last position
+        const deltaX = newX - positionState.x;
+        const deltaY = newY - positionState.y;
+
+        // Call the group drag handler if component is selected
+        if (isSelected && onGroupDrag) {
+          onGroupDrag(id, deltaX, deltaY);
+        } else {
+          setPosition({ x: newX, y: newY });
+        }
       } else if (resizeDir.current && containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
         const dx = e.clientX - rect.left;
@@ -52,8 +76,8 @@ export default function ResizeAndDrag({
 
         let newWidth = size.width;
         let newHeight = size.height;
-        let newX = position.x;
-        let newY = position.y;
+        let newX = positionState.x;
+        let newY = positionState.y;
 
         switch (resizeDir.current) {
           case "right":
@@ -110,14 +134,14 @@ export default function ResizeAndDrag({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [size, position]);
+  }, [size, positionState, isSelected, onGroupDrag, id]);
 
   function startDrag(e: React.MouseEvent) {
     e.stopPropagation();
     isDragging.current = true;
     dragOffset.current = {
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
+      x: e.clientX - positionState.x,
+      y: e.clientY - positionState.y,
     };
   }
 
@@ -137,13 +161,18 @@ export default function ResizeAndDrag({
       ref={containerRef}
       className={`absolute ${isSelected && "border-[2px] border-[#70acdc]"} bg-transparent select-none hover:border-[2px] hover:border-[#70acdc]`}
       style={{
-        left: position.x,
-        top: position.y,
+        left: positionState.x,
+        top: positionState.y,
         width: size.width,
         height: size.height,
       }}
-      onMouseDown={startDrag}
-      onMouseUp={() => setSelectedIds([id])}
+      onMouseDown={(e) => {
+        startDrag(e);
+        // Handle selection on mouse down instead
+        if (onClick) {
+          onClick(id, e);
+        }
+      }}
     >
       <div className="w-full h-full pointer-events-none">{children}</div>
 
