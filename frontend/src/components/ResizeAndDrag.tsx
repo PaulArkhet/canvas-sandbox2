@@ -17,6 +17,7 @@ export default function ResizeAndDrag({
   onRefUpdate,
   x,
   y,
+  setSelectedIds,
 }: {
   children: React.ReactNode;
   id: string;
@@ -24,6 +25,7 @@ export default function ResizeAndDrag({
   onRefUpdate?: (id: string, ref: HTMLDivElement | null) => void;
   x: number;
   y: number;
+  setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: x, y: y });
@@ -122,10 +124,14 @@ export default function ResizeAndDrag({
     };
   }
 
+  useEffect(() => {
+    onRefUpdate?.(id, containerRef.current);
+  }, [onRefUpdate, id]);
+
   return (
     <div
       ref={containerRef}
-      className="absolute border-[2px] border-[#70acdc] bg-transparent select-none"
+      className={`absolute ${isSelected && "border-[2px] border-[#70acdc]"} bg-transparent select-none hover:border-[2px] hover:border-[#70acdc]`}
       style={{
         left: position.x,
         top: position.y,
@@ -133,6 +139,7 @@ export default function ResizeAndDrag({
         height: size.height,
       }}
       onMouseDown={startDrag}
+      onMouseUp={() => setSelectedIds([id])}
     >
       <div className="w-full h-full pointer-events-none">{children}</div>
 
@@ -155,22 +162,30 @@ export default function ResizeAndDrag({
       />
 
       {/* Corner handles */}
-      <div
-        className="absolute top-[-6px] left-[-6px] w-2 h-2 border border-[#70acdc] bg-[#2c2c2c] cursor-nw-resize"
-        onMouseDown={startResize("top-left")}
-      />
-      <div
-        className="absolute top-[-6px] right-[-6px] w-2 h-2 border border-[#70acdc] bg-[#2c2c2c] cursor-ne-resize"
-        onMouseDown={startResize("top-right")}
-      />
-      <div
-        className="absolute bottom-[-6px] left-[-6px] w-2 h-2 border border-[#70acdc] bg-[#2c2c2c] cursor-sw-resize"
-        onMouseDown={startResize("bottom-left")}
-      />
-      <div
-        className="absolute bottom-[-6px] right-[-6px] w-2 h-2 border border-[#70acdc] bg-[#2c2c2c] cursor-se-resize"
-        onMouseDown={startResize("bottom-right")}
-      />
+      {isSelected && (
+        <div
+          className="absolute top-[-6px] left-[-6px] w-2 h-2 border border-[#70acdc] bg-[#2c2c2c] cursor-nw-resize"
+          onMouseDown={startResize("top-left")}
+        />
+      )}
+      {isSelected && (
+        <div
+          className="absolute top-[-6px] right-[-6px] w-2 h-2 border border-[#70acdc] bg-[#2c2c2c] cursor-ne-resize"
+          onMouseDown={startResize("top-right")}
+        />
+      )}
+      {isSelected && (
+        <div
+          className="absolute bottom-[-6px] left-[-6px] w-2 h-2 border border-[#70acdc] bg-[#2c2c2c] cursor-sw-resize"
+          onMouseDown={startResize("bottom-left")}
+        />
+      )}
+      {isSelected && (
+        <div
+          className="absolute bottom-[-6px] right-[-6px] w-2 h-2 border border-[#70acdc] bg-[#2c2c2c] cursor-se-resize"
+          onMouseDown={startResize("bottom-right")}
+        />
+      )}
     </div>
   );
 }

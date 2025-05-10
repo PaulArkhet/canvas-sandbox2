@@ -85,6 +85,7 @@ function RouteComponent() {
         onRefUpdate={updateRef}
         x={400}
         y={200}
+        setSelectedIds={setSelectedIds}
       >
         <button className="pointer-events-auto">BUTTON</button>
       </ResizeAndDrag>
@@ -94,6 +95,7 @@ function RouteComponent() {
         onRefUpdate={updateRef}
         x={600}
         y={400}
+        setSelectedIds={setSelectedIds}
       >
         <div>SOME TEXT</div>
       </ResizeAndDrag>

@@ -2,6 +2,8 @@ import logo from "/capyness.png";
 import { useState } from "react";
 import caretDown from "/iconcaretdown.png";
 import caretRight from "/iconcaretright.png";
+import ButtonComponent from "./leftnav/ButtonComponent";
+import TextComponent from "./leftnav/TextComponent";
 
 export default function LeftNav() {
   const [searchContent, setSearchContent] = useState("");
@@ -65,6 +67,12 @@ export default function LeftNav() {
           >
             <img src={caretDown} alt="" className="mr-2 w-[10px] py-2" />
             <p>Basic Components</p>
+          </div>
+        )}
+        {showComponents && (
+          <div className="grid grid-cols-3 gap-2 pr-4 pb-2">
+            <ButtonComponent />
+            <TextComponent />
           </div>
         )}
       </div>
