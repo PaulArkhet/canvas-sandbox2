@@ -17,6 +17,7 @@ export default function ResizeAndDrag({
   onRefUpdate,
   x,
   y,
+  selectedIds,
   setSelectedIds,
   width,
   height,
@@ -27,6 +28,7 @@ export default function ResizeAndDrag({
   onRefUpdate?: (id: string, ref: HTMLDivElement | null) => void;
   x: number;
   y: number;
+  selectedIds: string[];
   setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>;
   width: number;
   height: number;
@@ -166,25 +168,25 @@ export default function ResizeAndDrag({
       />
 
       {/* Corner handles */}
-      {isSelected && (
+      {isSelected && selectedIds.length < 2 && (
         <div
           className="absolute top-[-6px] left-[-6px] w-2 h-2 border border-[#70acdc] bg-[#2c2c2c] cursor-nw-resize"
           onMouseDown={startResize("top-left")}
         />
       )}
-      {isSelected && (
+      {isSelected && selectedIds.length < 2 && (
         <div
           className="absolute top-[-6px] right-[-6px] w-2 h-2 border border-[#70acdc] bg-[#2c2c2c] cursor-ne-resize"
           onMouseDown={startResize("top-right")}
         />
       )}
-      {isSelected && (
+      {isSelected && selectedIds.length < 2 && (
         <div
           className="absolute bottom-[-6px] left-[-6px] w-2 h-2 border border-[#70acdc] bg-[#2c2c2c] cursor-sw-resize"
           onMouseDown={startResize("bottom-left")}
         />
       )}
-      {isSelected && (
+      {isSelected && selectedIds.length < 2 && (
         <div
           className="absolute bottom-[-6px] right-[-6px] w-2 h-2 border border-[#70acdc] bg-[#2c2c2c] cursor-se-resize"
           onMouseDown={startResize("bottom-right")}

@@ -85,6 +85,7 @@ function RouteComponent() {
         onRefUpdate={updateRef}
         x={400}
         y={200}
+        selectedIds={selectedIds}
         setSelectedIds={setSelectedIds}
         width={100}
         height={50}
@@ -99,6 +100,7 @@ function RouteComponent() {
         onRefUpdate={updateRef}
         x={600}
         y={400}
+        selectedIds={selectedIds}
         setSelectedIds={setSelectedIds}
         width={100}
         height={50}
