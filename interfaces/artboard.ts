@@ -11,6 +11,14 @@ import {
 } from "../schemas/shapes";
 import { z } from "zod";
 
+const shapeVariationsSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("page") }).merge(createSelectSchema(pageShapes)),
+  z.object({ type: z.literal("text") }).merge(createSelectSchema(textShapes)),
+  z
+    .object({ type: z.literal("button") })
+    .merge(createSelectSchema(buttonShapes)),
+]);
+
 const shapeVariationsSchemaInsert = z.discriminatedUnion("type", [
   z
     .object({ type: z.literal("page") })
@@ -25,8 +33,17 @@ const shapeVariationsSchemaInsert = z.discriminatedUnion("type", [
     .omit({ shapeId: true }),
 ]);
 
+export const baseShapeSchema = createSelectSchema(shapesTable).omit({
+  type: true,
+});
+
 export const baseShapeSchemaInsert = createInsertSchema(shapesTable);
 
 export const wireframeSchemaItemInsert = shapeVariationsSchemaInsert.and(
   baseShapeSchemaInsert
 );
+
+export const wireframeSchema = z.array(
+  shapeVariationsSchema.and(baseShapeSchema)
+);
+export type Wireframe = z.infer<typeof wireframeSchema>[number];
