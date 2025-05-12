@@ -19,6 +19,21 @@ const shapeVariationsSchema = z.discriminatedUnion("type", [
     .merge(createSelectSchema(buttonShapes)),
 ]);
 
+const shapeVariationsSchemaPartial = z.discriminatedUnion("type", [
+  z
+    .object({ type: z.literal("page") })
+    .merge(createUpdateSchema(pageShapes))
+    .omit({ shapeId: true }),
+  z
+    .object({ type: z.literal("text") })
+    .merge(createUpdateSchema(textShapes))
+    .omit({ shapeId: true }),
+  z
+    .object({ type: z.literal("button") })
+    .merge(createUpdateSchema(buttonShapes))
+    .omit({ shapeId: true }),
+]);
+
 const shapeVariationsSchemaInsert = z.discriminatedUnion("type", [
   z
     .object({ type: z.literal("page") })
@@ -37,7 +52,16 @@ export const baseShapeSchema = createSelectSchema(shapesTable).omit({
   type: true,
 });
 
+export const baseShapeSchemaPartial = createUpdateSchema(shapesTable).omit({
+  id: true,
+  type: true,
+});
+
 export const baseShapeSchemaInsert = createInsertSchema(shapesTable);
+
+export const wireframeSchemaItemPartial = shapeVariationsSchemaPartial.and(
+  baseShapeSchemaPartial
+);
 
 export const wireframeSchemaItemInsert = shapeVariationsSchemaInsert.and(
   baseShapeSchemaInsert

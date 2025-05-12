@@ -8,24 +8,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-export const shapeTypesArray = [
-  "page",
-  "button",
-  "inputField",
-  "text",
-  "checkbox",
-  "radio",
-  "toggle",
-  "card",
-  "image",
-  "dropdown",
-  "circle",
-  "chatbot",
-  "divider",
-  "navigation",
-  "instance",
-  "rectangle",
-] as const;
+export const shapeTypesArray = ["page", "button", "text"] as const;
 
 export const shapeTypes = pgEnum("shape_type", shapeTypesArray);
 
