@@ -24,7 +24,67 @@ const shapeSchemaMapping = {
   button: { schema: createSelectSchema(buttonShapes), table: buttonShapes },
 } as const;
 
+export const allShapesWithJoinsSelectStatement = db
+  .select({
+    base: shapesTable,
+    page: pageShapes,
+    button: buttonShapes,
+    text: textShapes,
+  })
+  .from(shapesTable)
+  .leftJoin(pageShapes, eq(shapesTable.id, pageShapes.shapeId))
+  .leftJoin(buttonShapes, eq(shapesTable.id, buttonShapes.shapeId))
+  .leftJoin(textShapes, eq(shapesTable.id, textShapes.shapeId));
+
+export async function getShapes() {
+  const { result: shapesQueryResult, error: queryError } = await mightFail(
+    allShapesWithJoinsSelectStatement
+  );
+
+  if (queryError) {
+    throw new HTTPException(500, {
+      message: "Error when querying shapes.",
+      cause: queryError,
+    });
+  }
+
+  const parsedShapesQueryResult = shapesQueryResult
+    .filter((rawShape) => {
+      const type = rawShape.base.type;
+      if (rawShape[type] === null) {
+        console.error(
+          "Shape type does not match with queried result, filtering invalid shape out."
+        );
+        return false;
+      }
+      return true;
+    })
+    .map(async (rawShape) => {
+      const type = rawShape.base.type;
+      if (rawShape[type] === null) {
+        console.error(rawShape);
+        console.error(type);
+        throw new Error("This should never occur.");
+      }
+      const parsedShape = {
+        ...rawShape.base,
+        ...rawShape[type],
+      } as Wireframe;
+
+      return parsedShape;
+    });
+
+  const result = await Promise.all(parsedShapesQueryResult);
+
+  return result;
+}
+
 export const shapesRouter = new Hono()
+  .get("/", async (c) => {
+    const result = await getShapes();
+
+    return c.json({ success: true, shape: result }, 200);
+  })
   .post("/create", zValidator("json", wireframeSchemaItemInsert), async (c) => {
     const shapeProps = c.req.valid("json");
 
