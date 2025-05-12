@@ -32,6 +32,8 @@ const apiRoutes = app
   .route("/multipage-paths", multipagePathRouter)
   .route("/shapes", shapesRouter);
 
+export type ApiRoutes = typeof apiRoutes;
+
 app.use("/*", serveStatic({ root: "./frontend/dist" }));
 app.get("/*", async (c) => {
   try {
