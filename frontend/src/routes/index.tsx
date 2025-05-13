@@ -16,6 +16,7 @@ import ZoomableComponent from "../components/zoom/ZoomableComponent";
 import useArtboardStore from "../store/ArtboardStore";
 import { useQuery } from "@tanstack/react-query";
 import { getAllShapesQueryOptions } from "../lib/api/shapes";
+import type { Wireframe } from "../../../interfaces/artboard";
 
 export type DragDelta = { x: number; y: number };
 
@@ -25,6 +26,33 @@ export type ActiveDragState = {
   delta: DragDelta;
   selectedShapeIds: string[];
 };
+
+export type Bounds = ReturnType<typeof getBoundsForShape>;
+
+export function getBoundsForShape(shape: Wireframe) {
+  return {
+    leftBound: shape.xOffset,
+    rightBound: shape.xOffset + shape.width,
+    topBound: shape.yOffset,
+    bottomBound: shape.yOffset + shape.height,
+  };
+}
+
+export function isInBoundsOfOuterShape(outerShape: Bounds, innerShape: Bounds) {
+  const result =
+    outerShape.topBound < innerShape.topBound &&
+    outerShape.bottomBound > innerShape.bottomBound &&
+    outerShape.leftBound < innerShape.leftBound &&
+    outerShape.rightBound > innerShape.rightBound;
+  return result;
+}
+
+export function isShapeInPage(shape: Wireframe, page: Wireframe) {
+  return isInBoundsOfOuterShape(
+    getBoundsForShape(page),
+    getBoundsForShape(shape)
+  );
+}
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,

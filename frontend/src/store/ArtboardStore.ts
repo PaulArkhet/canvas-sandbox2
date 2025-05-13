@@ -1,6 +1,7 @@
 import type { Wireframe } from "../../../interfaces/artboard";
 import type { ActiveDragState } from "../routes";
 import { create } from "zustand";
+import type { HandleType } from "../../../interfaces/artboard";
 
 export type ArtboardState = {
   shapeHistory: {
@@ -12,6 +13,8 @@ export type ArtboardState = {
   toggleHandTool: () => void;
   handleTimeTravel: (direction: "redo" | "undo") => void;
   addUndoState: (shapes: Wireframe[]) => void;
+  debugPath: TemporaryPath | null;
+  setDebugPath: (path: TemporaryPath | null) => void;
   setTemporaryOffset: (
     temporaryOffset: null | {
       targetShapeIds: string[];
@@ -36,6 +39,10 @@ export type ArtboardState = {
 };
 
 const useArtboardStore = create<ArtboardState>((set, get) => ({
+  debugPath: null,
+  setDebugPath: (path: TemporaryPath | null) => {
+    set({ debugPath: path });
+  },
   shapeHistory: {
     undoStack: [],
     redoStack: [],
@@ -92,5 +99,13 @@ const useArtboardStore = create<ArtboardState>((set, get) => ({
     set({ selectedShapeIds: newSet });
   },
 }));
+
+export type TemporaryPath = {
+  path: { x: number; y: number }[];
+  originalShapeId: string;
+  handleType: HandleType;
+  pageExcludeList: string[];
+  direction: "vertical" | "horizontal";
+};
 
 export default useArtboardStore;

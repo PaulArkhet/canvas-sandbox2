@@ -10,6 +10,8 @@ import {
   textShapes,
 } from "../schemas/shapes";
 import { z } from "zod";
+import type { handleTypeArray, multipagePath } from "../schemas/multipagePath";
+import type { InferSelectModel } from "drizzle-orm";
 
 const shapeVariationsSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("page") }).merge(createSelectSchema(pageShapes)),
@@ -72,3 +74,5 @@ export const wireframeSchema = z.array(
 );
 export type Wireframe = z.infer<typeof wireframeSchema>[number];
 export type ShapeVariations = z.infer<typeof shapeVariationsSchema>;
+export type PermanentPath = InferSelectModel<typeof multipagePath>;
+export type HandleType = (typeof handleTypeArray)[number];
