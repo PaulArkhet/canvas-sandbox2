@@ -25,6 +25,9 @@ export default function ResizeAndDrag({
   y,
   width,
   height,
+  onGroupDrag,
+  position,
+  onClick,
   selectedIds,
   setSelectedIds,
   onDragStart,
@@ -39,6 +42,9 @@ export default function ResizeAndDrag({
   y: number;
   width: number;
   height: number;
+  onGroupDrag?: (id: string, deltaX: number, deltaY: number) => void;
+  position?: { x: number; y: number };
+  onClick?: (id: string, e: React.MouseEvent) => void;
   selectedIds: string[];
   setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>;
   onDragStart?: (id: string, x: number, y: number) => void;
@@ -46,7 +52,10 @@ export default function ResizeAndDrag({
   onDragEnd?: (id: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: x, y: y });
+  const [positionState, setPosition] = useState({
+    x: position?.x ?? x,
+    y: position?.y ?? y,
+  });
   const [size, setSize] = useState({ width: width, height: height });
   const isDragging = useRef(false);
   const resizeDir = useRef<Direction | null>(null);
@@ -54,19 +63,40 @@ export default function ResizeAndDrag({
   const lastPosition = useRef({ x, y });
 
   useEffect(() => {
+    // Only update if not currently being dragged and the position has actually changed
+    if (!isDragging.current && position) {
+      const posChanged =
+        position.x !== positionState.x || position.y !== positionState.y;
+      if (posChanged) {
+        setPosition(position);
+        lastPosition.current = { x: position.x, y: position.y };
+      }
+    }
+  }, [position]);
+
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging.current) {
         const newX = e.clientX - dragOffset.current.x;
         const newY = e.clientY - dragOffset.current.y;
 
-        // Calculate delta from the start of the drag operation
-        const dx = newX - lastPosition.current.x;
-        const dy = newY - lastPosition.current.y;
+        // Calculate deltas from last position
+        const deltaX = newX - positionState.x;
+        const deltaY = newY - positionState.y;
 
+        // Update local position state
         setPosition({ x: newX, y: newY });
 
-        // Inform parent about the drag movement
+        // Call group drag handler if this is part of a selection
+        if (isSelected && selectedIds.length > 1 && onGroupDrag) {
+          onGroupDrag(id, deltaX, deltaY);
+        }
+
+        // Always call onDrag for position tracking
         if (onDrag) {
+          // Calculate delta from the start of this drag operation
+          const dx = newX - lastPosition.current.x;
+          const dy = newY - lastPosition.current.y;
           onDrag(id, dx, dy);
         }
       } else if (resizeDir.current && containerRef.current) {
@@ -76,8 +106,8 @@ export default function ResizeAndDrag({
 
         let newWidth = size.width;
         let newHeight = size.height;
-        let newX = position.x;
-        let newY = position.y;
+        let newX = positionState.x;
+        let newY = positionState.y;
 
         switch (resizeDir.current) {
           case "right":
@@ -137,7 +167,7 @@ export default function ResizeAndDrag({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [size, position, id, onDrag, onDragEnd]);
+  }, [size, positionState, isSelected, onGroupDrag, id, onDrag, onDragEnd]);
 
   // Sync actual position from props whenever not dragging
   useEffect(() => {
@@ -149,37 +179,15 @@ export default function ResizeAndDrag({
     }
   }, [x, y]);
 
-  function startDrag(e: React.MouseEvent) {
-    e.stopPropagation();
-
-    // If not selected, make this the only selected item (unless using modifier)
-    if (!isSelected) {
-      const ctrlKey = e.ctrlKey || e.metaKey;
-      if (ctrlKey) {
-        setSelectedIds((prev) => [...prev, id]);
-      } else {
-        setSelectedIds([id]);
-      }
-    }
-
-    // Start drag after any selection is complete
-    isDragging.current = true;
-    dragOffset.current = {
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
-    };
-    lastPosition.current = { ...position };
-
-    if (onDragStart) {
-      onDragStart(id, position.x, position.y);
-    }
-  }
-
   function startResize(dir: Direction) {
     return function (e: React.MouseEvent) {
       e.stopPropagation();
       resizeDir.current = dir;
     };
+  }
+
+  function startDrag(e: React.MouseEvent) {
+    e.stopPropagation(); // Keep just this part for code that might call startDrag directly
   }
 
   function handleClick(e: React.MouseEvent) {
@@ -204,13 +212,42 @@ export default function ResizeAndDrag({
       ref={containerRef}
       className={`absolute ${isSelected ? "border-[2px] border-[#70acdc]" : "hover:border-[2px] hover:border-[#70acdc]"} bg-transparent select-none`}
       style={{
-        left: position.x,
-        top: position.y,
+        left: positionState.x,
+        top: positionState.y,
         width: size.width,
         height: size.height,
       }}
-      onMouseDown={startDrag}
-      onClick={handleClick}
+      onMouseDown={(e) => {
+        e.stopPropagation();
+
+        // Handle selection first (preserving multi-select with modifiers)
+        if (!isSelected) {
+          const ctrlKey = e.ctrlKey || e.metaKey;
+          if (ctrlKey) {
+            setSelectedIds((prev) => [...prev, id]);
+          } else {
+            setSelectedIds([id]);
+          }
+        }
+
+        // Start drag operation
+        isDragging.current = true;
+        dragOffset.current = {
+          x: e.clientX - positionState.x,
+          y: e.clientY - positionState.y,
+        };
+        lastPosition.current = { x: positionState.x, y: positionState.y };
+
+        // Notify parent about drag start
+        if (onDragStart) {
+          onDragStart(id, positionState.x, positionState.y);
+        }
+
+        // Handle custom click behavior if provided
+        if (onClick) {
+          onClick(id, e);
+        }
+      }}
     >
       <div className="w-full h-full pointer-events-none">{children}</div>
 
