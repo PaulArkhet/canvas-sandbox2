@@ -46,6 +46,24 @@ function RouteComponent() {
   const ctx = useContext(ViewContext)!;
   const { isHandToolActive } = useArtboardStore();
   const { data: shapes } = useQuery(getAllShapesQueryOptions());
+  const demoShapes = [
+    {
+      id: "a",
+      xOffset: 400,
+      yOffset: 200,
+      width: 100,
+      height: 50,
+      type: "button",
+    },
+    {
+      id: "b",
+      xOffset: 600,
+      yOffset: 400,
+      width: 100,
+      height: 50,
+      type: "text",
+    },
+  ];
 
   useEffect(() => {
     return () => {
@@ -118,34 +136,29 @@ function RouteComponent() {
         shapes={shapes ? shapes : []}
       >
         <div>
-          <ResizeAndDrag
-            id="a"
-            isSelected={selectedIds.includes("a")}
-            onRefUpdate={updateRef}
-            x={400}
-            y={200}
-            width={100}
-            height={50}
-            selectedIds={selectedIds}
-            setSelectedIds={setSelectedIds}
-          >
-            <div className="relative w-full h-full flex items-center flex-col text-left rounded justify-center bg-white text-black [container-type:size]">
-              <button className="pointer-events-auto">BUTTON</button>
-            </div>
-          </ResizeAndDrag>
-          <ResizeAndDrag
-            id="b"
-            isSelected={selectedIds.includes("b")}
-            onRefUpdate={updateRef}
-            x={600}
-            y={400}
-            width={100}
-            height={50}
-            selectedIds={selectedIds}
-            setSelectedIds={setSelectedIds}
-          >
-            <div>SOME TEXT</div>
-          </ResizeAndDrag>
+          {demoShapes.map((shape) => (
+            <ResizeAndDrag
+              id={shape.id}
+              isSelected={selectedIds.includes(shape.id)}
+              onRefUpdate={updateRef}
+              x={shape.xOffset}
+              y={shape.yOffset}
+              width={shape.width}
+              height={shape.height}
+              selectedIds={selectedIds}
+              setSelectedIds={setSelectedIds}
+            >
+              {shape.type == "button" ? (
+                <div className="relative w-full h-full flex items-center flex-col text-left rounded justify-center bg-white text-black [container-type:size]">
+                  <button className="pointer-events-auto">BUTTON</button>
+                </div>
+              ) : shape.type == "text" ? (
+                <div>SOME TEXT</div>
+              ) : (
+                ""
+              )}
+            </ResizeAndDrag>
+          ))}
         </div>
       </ZoomableComponent>
       {selectBox && (
