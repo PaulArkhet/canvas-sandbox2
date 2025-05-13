@@ -46,7 +46,7 @@ function RouteComponent() {
   const ctx = useContext(ViewContext)!;
   const { isHandToolActive } = useArtboardStore();
   const { data: shapes } = useQuery(getAllShapesQueryOptions());
-  const demoShapes = [
+  const [demoShapes, setDemoShapes] = useState([
     {
       id: "a",
       xOffset: 400,
@@ -63,7 +63,9 @@ function RouteComponent() {
       height: 50,
       type: "text",
     },
-  ];
+  ]);
+  const [isDraggingGroup, setIsDraggingGroup] = useState(false);
+  const activeDraggingId = useRef<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -86,6 +88,11 @@ function RouteComponent() {
       width: 0,
       height: 0,
     });
+
+    // Clear selection if clicking on the background
+    if (!e.ctrlKey && !e.metaKey) {
+      setSelectedIds([]);
+    }
   }
 
   function handleMouseMove(e: React.MouseEvent) {
@@ -122,6 +129,124 @@ function RouteComponent() {
     componentRefs.current[id] = ref;
   };
 
+  // Group drag functionality
+  // Store the initial positions when starting a group drag
+  const initialPositions = useRef<Record<string, { x: number; y: number }>>({});
+
+  const handleDragStart = (id: string, x: number, y: number) => {
+    activeDraggingId.current = id;
+
+    // Check if this is a group drag (if selected shape is part of a multi-selection)
+    const isGroupDrag = selectedIds.includes(id) && selectedIds.length > 1;
+    setIsDraggingGroup(isGroupDrag);
+
+    if (isGroupDrag) {
+      // Store initial positions of all selected shapes
+      const positions: Record<string, { x: number; y: number }> = {};
+
+      selectedIds.forEach((shapeId) => {
+        // Find the shape in our demo shapes array
+        const shape = demoShapes.find((s) => s.id === shapeId);
+        if (shape) {
+          positions[shapeId] = {
+            x: shape.xOffset,
+            y: shape.yOffset,
+          };
+        }
+      });
+
+      initialPositions.current = positions;
+
+      // Ensure the dragged item is definitely in our positions map
+      if (!initialPositions.current[id]) {
+        initialPositions.current[id] = { x, y };
+      }
+    }
+  };
+
+  const handleDrag = (id: string, dx: number, dy: number) => {
+    if (isDraggingGroup && activeDraggingId.current === id) {
+      // Update positions of all selected shapes
+      setDemoShapes((prevShapes) =>
+        prevShapes.map((shape) => {
+          if (selectedIds.includes(shape.id)) {
+            // Get the initial position for this shape
+            const initialPos = initialPositions.current[shape.id];
+            if (initialPos) {
+              // Calculate the new position based on initial position and delta
+              return {
+                ...shape,
+                xOffset: initialPos.x + dx,
+                yOffset: initialPos.y + dy,
+              };
+            }
+          }
+          return shape;
+        })
+      );
+    }
+  };
+
+  // Update the main state when single shapes are moved
+  const updateShapePosition = (id: string, newX: number, newY: number) => {
+    setDemoShapes((prevShapes) =>
+      prevShapes.map((shape) =>
+        shape.id === id ? { ...shape, xOffset: newX, yOffset: newY } : shape
+      )
+    );
+  };
+
+  const handleDragEnd = (id: string) => {
+    // Get the shape's DOM element
+    const shapeElement = componentRefs.current[id];
+
+    if (isDraggingGroup) {
+      // For group drag, we need to calculate the final delta from the dragged element
+      const draggedShape = demoShapes.find((shape) => shape.id === id);
+      if (draggedShape && shapeElement) {
+        const rect = shapeElement.getBoundingClientRect();
+
+        // Calculate the actual movement delta from initial position
+        const initialPos = initialPositions.current[id] || {
+          x: draggedShape.xOffset,
+          y: draggedShape.yOffset,
+        };
+        const finalDeltaX = rect.left - initialPos.x;
+        const finalDeltaY = rect.top - initialPos.y;
+
+        // Update all shapes in the group using the same delta
+        setDemoShapes((prevShapes) =>
+          prevShapes.map((shape) => {
+            if (selectedIds.includes(shape.id)) {
+              // Get initial position with fallback to current position
+              const shapeInitialPos = initialPositions.current[shape.id] || {
+                x: shape.xOffset,
+                y: shape.yOffset,
+              };
+              return {
+                ...shape,
+                xOffset: shapeInitialPos.x + finalDeltaX,
+                yOffset: shapeInitialPos.y + finalDeltaY,
+              };
+            }
+            return shape;
+          })
+        );
+      }
+    } else {
+      // Single shape drag - update just this shape's position
+      if (shapeElement) {
+        const rect = shapeElement.getBoundingClientRect();
+        updateShapePosition(id, rect.left, rect.top);
+      }
+    }
+
+    // Clean up
+    initialPositions.current = {};
+    setIsDraggingGroup(false);
+    activeDraggingId.current = null;
+  };
+
   return (
     <div
       ref={containerRef}
@@ -138,6 +263,7 @@ function RouteComponent() {
         <div>
           {demoShapes.map((shape) => (
             <ResizeAndDrag
+              key={shape.id}
               id={shape.id}
               isSelected={selectedIds.includes(shape.id)}
               onRefUpdate={updateRef}
@@ -147,6 +273,9 @@ function RouteComponent() {
               height={shape.height}
               selectedIds={selectedIds}
               setSelectedIds={setSelectedIds}
+              onDragStart={handleDragStart}
+              onDrag={handleDrag}
+              onDragEnd={handleDragEnd}
             >
               {shape.type == "button" ? (
                 <div className="relative w-full h-full flex items-center flex-col text-left rounded justify-center bg-white text-black [container-type:size]">

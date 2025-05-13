@@ -27,6 +27,9 @@ export default function ResizeAndDrag({
   height,
   selectedIds,
   setSelectedIds,
+  onDragStart,
+  onDrag,
+  onDragEnd,
 }: {
   children: React.ReactNode;
   id: string;
@@ -38,6 +41,9 @@ export default function ResizeAndDrag({
   height: number;
   selectedIds: string[];
   setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>;
+  onDragStart?: (id: string, x: number, y: number) => void;
+  onDrag?: (id: string, dx: number, dy: number) => void;
+  onDragEnd?: (id: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: x, y: y });
@@ -45,14 +51,24 @@ export default function ResizeAndDrag({
   const isDragging = useRef(false);
   const resizeDir = useRef<Direction | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
+  const lastPosition = useRef({ x, y });
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging.current) {
-        setPosition({
-          x: e.clientX - dragOffset.current.x,
-          y: e.clientY - dragOffset.current.y,
-        });
+        const newX = e.clientX - dragOffset.current.x;
+        const newY = e.clientY - dragOffset.current.y;
+
+        // Calculate delta from the start of the drag operation
+        const dx = newX - lastPosition.current.x;
+        const dy = newY - lastPosition.current.y;
+
+        setPosition({ x: newX, y: newY });
+
+        // Inform parent about the drag movement
+        if (onDrag) {
+          onDrag(id, dx, dy);
+        }
       } else if (resizeDir.current && containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
         const dx = e.clientX - rect.left;
@@ -108,6 +124,9 @@ export default function ResizeAndDrag({
     };
 
     function handleMouseUp() {
+      if (isDragging.current && onDragEnd) {
+        onDragEnd(id);
+      }
       isDragging.current = false;
       resizeDir.current = null;
     }
@@ -118,15 +137,42 @@ export default function ResizeAndDrag({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [size, position]);
+  }, [size, position, id, onDrag, onDragEnd]);
+
+  // Sync actual position from props whenever not dragging
+  useEffect(() => {
+    // Only update if not currently being dragged to avoid jumps
+    if (!isDragging.current) {
+      setPosition({ x, y });
+      // Also update the lastPosition ref to ensure deltas are calculated correctly
+      lastPosition.current = { x, y };
+    }
+  }, [x, y]);
 
   function startDrag(e: React.MouseEvent) {
     e.stopPropagation();
+
+    // If not selected, make this the only selected item (unless using modifier)
+    if (!isSelected) {
+      const ctrlKey = e.ctrlKey || e.metaKey;
+      if (ctrlKey) {
+        setSelectedIds((prev) => [...prev, id]);
+      } else {
+        setSelectedIds([id]);
+      }
+    }
+
+    // Start drag after any selection is complete
     isDragging.current = true;
     dragOffset.current = {
       x: e.clientX - position.x,
       y: e.clientY - position.y,
     };
+    lastPosition.current = { ...position };
+
+    if (onDragStart) {
+      onDragStart(id, position.x, position.y);
+    }
   }
 
   function startResize(dir: Direction) {
@@ -136,6 +182,19 @@ export default function ResizeAndDrag({
     };
   }
 
+  function handleClick(e: React.MouseEvent) {
+    e.stopPropagation();
+
+    // Handle multi-selection with Ctrl/Cmd key
+    if (e.ctrlKey || e.metaKey) {
+      setSelectedIds((prev) =>
+        prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      );
+    } else if (!isSelected) {
+      setSelectedIds([id]);
+    }
+  }
+
   useEffect(() => {
     onRefUpdate?.(id, containerRef.current);
   }, [onRefUpdate, id]);
@@ -143,7 +202,7 @@ export default function ResizeAndDrag({
   return (
     <div
       ref={containerRef}
-      className={`absolute ${isSelected && "border-[2px] border-[#70acdc]"} bg-transparent select-none hover:border-[2px] hover:border-[#70acdc]`}
+      className={`absolute ${isSelected ? "border-[2px] border-[#70acdc]" : "hover:border-[2px] hover:border-[#70acdc]"} bg-transparent select-none`}
       style={{
         left: position.x,
         top: position.y,
@@ -151,7 +210,7 @@ export default function ResizeAndDrag({
         height: size.height,
       }}
       onMouseDown={startDrag}
-      onMouseUp={() => setSelectedIds([id])}
+      onClick={handleClick}
     >
       <div className="w-full h-full pointer-events-none">{children}</div>
 
