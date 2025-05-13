@@ -12,6 +12,10 @@ import {
 } from "react";
 import { ZoomBadge } from "../components/zoom/ZoomBadge";
 import { ViewContext } from "../components/zoom/ViewContext";
+import ZoomableComponent from "../components/zoom/ZoomableComponent";
+import useArtboardStore from "../store/ArtboardStore";
+import { useQuery } from "@tanstack/react-query";
+import { getAllShapesQueryOptions } from "../lib/api/shapes";
 
 export type DragDelta = { x: number; y: number };
 
@@ -40,6 +44,8 @@ function RouteComponent() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const componentRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const ctx = useContext(ViewContext)!;
+  const { isHandToolActive } = useArtboardStore();
+  const { data: shapes } = useQuery(getAllShapesQueryOptions());
 
   useEffect(() => {
     return () => {
@@ -108,34 +114,41 @@ function RouteComponent() {
       className="flex flex-col min-h-screen bg-[#2c2c2c] relative text-white"
     >
       <ZoomBadge />
-      <ResizeAndDrag
-        id="a"
-        isSelected={selectedIds.includes("a")}
-        onRefUpdate={updateRef}
-        x={400}
-        y={200}
-        selectedIds={selectedIds}
-        setSelectedIds={setSelectedIds}
-        width={100}
-        height={50}
+      <ZoomableComponent
+        panning={isHandToolActive}
+        shapes={shapes ? shapes : []}
       >
-        <div className="relative w-full h-full flex items-center flex-col text-left rounded justify-center bg-white text-black [container-type:size]">
-          <button className="pointer-events-auto">BUTTON</button>
+        <div>
+          <ResizeAndDrag
+            id="a"
+            isSelected={selectedIds.includes("a")}
+            onRefUpdate={updateRef}
+            x={400}
+            y={200}
+            selectedIds={selectedIds}
+            setSelectedIds={setSelectedIds}
+            width={100}
+            height={50}
+          >
+            <div className="relative w-full h-full flex items-center flex-col text-left rounded justify-center bg-white text-black [container-type:size]">
+              <button className="pointer-events-auto">BUTTON</button>
+            </div>
+          </ResizeAndDrag>
+          <ResizeAndDrag
+            id="b"
+            isSelected={selectedIds.includes("b")}
+            onRefUpdate={updateRef}
+            x={600}
+            y={400}
+            selectedIds={selectedIds}
+            setSelectedIds={setSelectedIds}
+            width={100}
+            height={50}
+          >
+            <div>SOME TEXT</div>
+          </ResizeAndDrag>
         </div>
-      </ResizeAndDrag>
-      <ResizeAndDrag
-        id="b"
-        isSelected={selectedIds.includes("b")}
-        onRefUpdate={updateRef}
-        x={600}
-        y={400}
-        selectedIds={selectedIds}
-        setSelectedIds={setSelectedIds}
-        width={100}
-        height={50}
-      >
-        <div>SOME TEXT</div>
-      </ResizeAndDrag>
+      </ZoomableComponent>
       {selectBox && (
         <div
           className="absolute border border-purple-200 bg-purple-500 opacity-10 pointer-events-none"
