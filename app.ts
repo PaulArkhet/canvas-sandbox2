@@ -3,6 +3,8 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { serveStatic } from "hono/bun";
 import { serve } from "bun";
+import { shapesRouter } from "./routes/shapes";
+import { multipagePathRouter } from "./routes/multipage-path";
 const cron = require("cron");
 const https = require("https");
 
@@ -24,6 +26,13 @@ const app = new Hono();
 const PORT = parseInt(process.env.PORT!) || 3333;
 app.use("*", logger());
 app.use("*", cors());
+
+const apiRoutes = app
+  .basePath("/api/v0")
+  .route("/multipage-paths", multipagePathRouter)
+  .route("/shapes", shapesRouter);
+
+export type ApiRoutes = typeof apiRoutes;
 
 app.use("/*", serveStatic({ root: "./frontend/dist" }));
 app.get("/*", async (c) => {

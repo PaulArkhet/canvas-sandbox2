@@ -1,0 +1,422 @@
+{
+  "id": "46584586-bd54-4f0b-a35c-b4ca37eb09b4",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.button": {
+      "name": "button",
+      "schema": "",
+      "columns": {
+        "shapeId": {
+          "name": "shapeId",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "pageId": {
+          "name": "pageId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subtype": {
+          "name": "subtype",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "size": {
+          "name": "size",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Medium'"
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 144
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 29
+        },
+        "textAlign": {
+          "name": "textAlign",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'center'"
+        },
+        "fontWeight": {
+          "name": "fontWeight",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'normal'"
+        },
+        "fontStyle": {
+          "name": "fontStyle",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'normal'"
+        },
+        "textDecoration": {
+          "name": "textDecoration",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'none'"
+        },
+        "leadingIcon": {
+          "name": "leadingIcon",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "trailingIcon": {
+          "name": "trailingIcon",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "button_shapeId_shapes_id_fk": {
+          "name": "button_shapeId_shapes_id_fk",
+          "tableFrom": "button",
+          "tableTo": "shapes",
+          "columnsFrom": [
+            "shapeId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "button_pageId_page_shapeId_fk": {
+          "name": "button_pageId_page_shapeId_fk",
+          "tableFrom": "button",
+          "tableTo": "page",
+          "columnsFrom": [
+            "pageId"
+          ],
+          "columnsTo": [
+            "shapeId"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.page": {
+      "name": "page",
+      "schema": "",
+      "columns": {
+        "shapeId": {
+          "name": "shapeId",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "subtype": {
+          "name": "subtype",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "page_shapeId_shapes_id_fk": {
+          "name": "page_shapeId_shapes_id_fk",
+          "tableFrom": "page",
+          "tableTo": "shapes",
+          "columnsFrom": [
+            "shapeId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.shapes": {
+      "name": "shapes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "xOffset": {
+          "name": "xOffset",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "yOffset": {
+          "name": "yOffset",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "minWidth": {
+          "name": "minWidth",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "maxWidth": {
+          "name": "maxWidth",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "minHeight": {
+          "name": "minHeight",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "maxHeight": {
+          "name": "maxHeight",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "isInstanceChild": {
+          "name": "isInstanceChild",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "zIndex": {
+          "name": "zIndex",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "shape_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.text": {
+      "name": "text",
+      "schema": "",
+      "columns": {
+        "shapeId": {
+          "name": "shapeId",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "pageId": {
+          "name": "pageId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fontSize": {
+          "name": "fontSize",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fontColor": {
+          "name": "fontColor",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "isBold": {
+          "name": "isBold",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "isItalic": {
+          "name": "isItalic",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "isUnderlined": {
+          "name": "isUnderlined",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "isStrikethrough": {
+          "name": "isStrikethrough",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "alignment": {
+          "name": "alignment",
+          "type": "alignment_options",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'left'"
+        },
+        "widthMode": {
+          "name": "widthMode",
+          "type": "layout_options",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'fixed-size'"
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "text_shapeId_shapes_id_fk": {
+          "name": "text_shapeId_shapes_id_fk",
+          "tableFrom": "text",
+          "tableTo": "shapes",
+          "columnsFrom": [
+            "shapeId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "text_pageId_page_shapeId_fk": {
+          "name": "text_pageId_page_shapeId_fk",
+          "tableFrom": "text",
+          "tableTo": "page",
+          "columnsFrom": [
+            "pageId"
+          ],
+          "columnsTo": [
+            "shapeId"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.shape_type": {
+      "name": "shape_type",
+      "schema": "public",
+      "values": [
+        "page",
+        "button",
+        "text"
+      ]
+    },
+    "public.alignment_options": {
+      "name": "alignment_options",
+      "schema": "public",
+      "values": [
+        "left",
+        "center",
+        "right"
+      ]
+    },
+    "public.layout_options": {
+      "name": "layout_options",
+      "schema": "public",
+      "values": [
+        "fixed-size",
+        "auto-width"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

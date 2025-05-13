@@ -1,7 +1,7 @@
 import { useState } from "react";
-import HandToolIcon from "./HandToolIcon";
-import PageIcon from "./PageIcon";
-import ArrowIcon from "./ArrowIcon";
+import HandToolIcon from "./topnav/HandToolIcon";
+import PageIcon from "./topnav/PageIcon";
+import ArrowIcon from "./topnav/ArrowIcon";
 
 export default function TopNav() {
   const [isHandToolActive, setIsHandToolActive] = useState(false);
