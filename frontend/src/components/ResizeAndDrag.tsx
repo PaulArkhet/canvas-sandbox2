@@ -1,4 +1,10 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, {
+  useRef,
+  useState,
+  useEffect,
+  type SetStateAction,
+  type Dispatch,
+} from "react";
 
 type Direction =
   | "top"
@@ -17,10 +23,10 @@ export default function ResizeAndDrag({
   onRefUpdate,
   x,
   y,
-  selectedIds,
-  setSelectedIds,
   width,
   height,
+  selectedIds,
+  setSelectedIds,
 }: {
   children: React.ReactNode;
   id: string;
@@ -28,10 +34,10 @@ export default function ResizeAndDrag({
   onRefUpdate?: (id: string, ref: HTMLDivElement | null) => void;
   x: number;
   y: number;
-  selectedIds: string[];
-  setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>;
   width: number;
   height: number;
+  selectedIds: string[];
+  setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: x, y: y });

@@ -82,7 +82,6 @@ function RouteComponent() {
   function handleMouseUp() {
     if (!selectBox) return;
     const selected: string[] = [];
-
     Object.entries(componentRefs.current).forEach(([id, el]) => {
       if (!el) return;
       const rect = el.getBoundingClientRect();
@@ -125,10 +124,10 @@ function RouteComponent() {
             onRefUpdate={updateRef}
             x={400}
             y={200}
-            selectedIds={selectedIds}
-            setSelectedIds={setSelectedIds}
             width={100}
             height={50}
+            selectedIds={selectedIds}
+            setSelectedIds={setSelectedIds}
           >
             <div className="relative w-full h-full flex items-center flex-col text-left rounded justify-center bg-white text-black [container-type:size]">
               <button className="pointer-events-auto">BUTTON</button>
@@ -140,10 +139,10 @@ function RouteComponent() {
             onRefUpdate={updateRef}
             x={600}
             y={400}
-            selectedIds={selectedIds}
-            setSelectedIds={setSelectedIds}
             width={100}
             height={50}
+            selectedIds={selectedIds}
+            setSelectedIds={setSelectedIds}
           >
             <div>SOME TEXT</div>
           </ResizeAndDrag>
