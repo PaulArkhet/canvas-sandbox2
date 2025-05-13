@@ -3,7 +3,24 @@ import ResizeAndDrag from "../components/ResizeAndDrag";
 import LeftNav from "../components/LeftNav";
 import TopNav from "../components/TopNav";
 import RightNav from "../components/RightNav";
-import { useRef, useState } from "react";
+import {
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { ZoomBadge } from "../components/zoom/ZoomBadge";
+import { ViewContext } from "../components/zoom/ViewContext";
+
+export type DragDelta = { x: number; y: number };
+
+export type ActiveDragState = {
+  pageId: string | null;
+  primaryShapeId?: string | null;
+  delta: DragDelta;
+  selectedShapeIds: string[];
+};
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,
@@ -17,13 +34,24 @@ function RouteComponent() {
     width: number;
     height: number;
   } | null>(null);
-
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(
     null
   );
-
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const componentRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const ctx = useContext(ViewContext)!;
+
+  useEffect(() => {
+    return () => {
+      ctx.setScale(1);
+      ctx.pos.current = { x: 0, y: 0 };
+    };
+  }, []);
+
+  const scale = useSyncExternalStore(
+    ctx?.subscribe ?? (() => () => {}),
+    () => ctx?.getSnapshot().scale ?? 1
+  );
 
   function handleMouseDown(e: React.MouseEvent) {
     if (e.target !== containerRef.current) return;
@@ -79,6 +107,7 @@ function RouteComponent() {
       onMouseUp={handleMouseUp}
       className="flex flex-col min-h-screen bg-[#2c2c2c] relative text-white"
     >
+      <ZoomBadge />
       <ResizeAndDrag
         id="a"
         isSelected={selectedIds.includes("a")}

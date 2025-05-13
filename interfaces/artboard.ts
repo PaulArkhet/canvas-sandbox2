@@ -71,3 +71,4 @@ export const wireframeSchema = z.array(
   shapeVariationsSchema.and(baseShapeSchema)
 );
 export type Wireframe = z.infer<typeof wireframeSchema>[number];
+export type ShapeVariations = z.infer<typeof shapeVariationsSchema>;
