@@ -13,7 +13,6 @@ import useArtboardStore from "../store/ArtboardStore";
 import type { Wireframe } from "../../../interfaces/artboard";
 import debounce from "lodash/debounce";
 import { getBoundsForShape, isShapeInPage } from "../routes/index";
-import type { ActiveDragState } from "../routes/index";
 import { ViewContext } from "./zoom/ViewContext";
 import { DragHandles } from "./DragHandles";
 import { GRID_SIZE_PIXELS } from "./Canvas";
@@ -31,11 +30,6 @@ import { v4 as uuid } from "uuid";
 import { isShapeInsidePage } from "../utils/findOpenSpace";
 import { useShallow } from "zustand/react/shallow";
 import { RenderShape } from "./RenderShape";
-
-interface MultiDragRef extends ActiveDragState {
-  selectedShapeIds: string[];
-  delta: DragDelta;
-}
 
 export function getNearestGridCoordinate(currentPositionPixels: number) {
   return currentPositionPixels;
@@ -88,7 +82,6 @@ export function DragAndDropComponent(props: {
   leadingIcon?: IconType;
   trailingIcon?: IconType;
   isAltKeyPressed: boolean;
-  activeDragRef: React.MutableRefObject<ActiveDragState>;
   isChild?: boolean;
   handleContextMenu: (event: React.MouseEvent<HTMLDivElement>) => void;
   scale: number;
@@ -389,31 +382,10 @@ export function DragAndDropComponent(props: {
     ? { x: currentPos.x - parent.xOffset, y: currentPos.y - parent.yOffset }
     : currentPos;
 
-  const active = props.activeDragRef.current as MultiDragRef | undefined;
-
-  if (
-    active &&
-    active.selectedShapeIds.includes(shape.id) && // I’m part of the selection
-    shape.id !== active.primaryShapeId && // but not the handle itself
-    !isDragging // I am a passenger
-  ) {
-    renderPos.x += active.delta.x;
-    renderPos.y += active.delta.y;
-  }
-
   function handleDragStart(e: RndDragEvent) {
     e.stopPropagation();
     e.preventDefault();
     setIsDragging(true);
-
-    if (selectedShapeIds.size > 1 && selectedShapeIds.has(shape.id)) {
-      props.activeDragRef.current = {
-        pageId: null,
-        primaryShapeId: shape.id,
-        selectedShapeIds: [...selectedShapeIds],
-        delta: { x: 0, y: 0 },
-      } as MultiDragRef;
-    }
 
     let currentSelection = new Set(selectedShapeIds);
 
@@ -489,16 +461,6 @@ export function DragAndDropComponent(props: {
           y: child.yOffset,
         });
       });
-
-      if (props.activeDragRef) {
-        props.activeDragRef.current = {
-          pageId: shape.id,
-          primaryShapeId: shape.id,
-          selectedShapeIds: Array.from(currentSelection).concat(
-            Array.from(children.map((c) => c.id))
-          ),
-          delta: { x: 0, y: 0 },
-        };
       }
     } else {
       if (currentSelection.has(shape.id)) {

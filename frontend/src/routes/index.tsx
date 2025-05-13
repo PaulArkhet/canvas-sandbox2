@@ -6,6 +6,7 @@ import RightNav from "../components/RightNav";
 import {
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -17,15 +18,9 @@ import useArtboardStore from "../store/ArtboardStore";
 import { useQuery } from "@tanstack/react-query";
 import { getAllShapesQueryOptions } from "../lib/api/shapes";
 import type { Wireframe } from "../../../interfaces/artboard";
+import { MemoCanvas } from "../components/Canvas";
 
 export type DragDelta = { x: number; y: number };
-
-export type ActiveDragState = {
-  pageId: string | null;
-  primaryShapeId?: string | null;
-  delta: DragDelta;
-  selectedShapeIds: string[];
-};
 
 export type Bounds = ReturnType<typeof getBoundsForShape>;
 
@@ -72,7 +67,7 @@ function RouteComponent() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const componentRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const ctx = useContext(ViewContext)!;
-  const { isHandToolActive } = useArtboardStore();
+  const { isHandToolActive, clearSelection, setDebugPath } = useArtboardStore();
   const { data: shapes } = useQuery(getAllShapesQueryOptions());
   const [demoShapes, setDemoShapes] = useState([
     {
@@ -94,6 +89,19 @@ function RouteComponent() {
   ]);
   const [isDraggingGroup, setIsDraggingGroup] = useState(false);
   const activeDraggingId = useRef<string | null>(null);
+  const pageRefList = useRef<HTMLDivElement[]>([]);
+  const allShapesRefList = useRef<HTMLDivElement[]>([]);
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+  const [canvasPosition, setCanvasPosition] = useState({
+    x: -1000,
+    y: -1000,
+  });
+  const [isAltKeyPressed, setIsAltKeyPressed] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+  } | null>(null);
 
   useEffect(() => {
     return () => {
@@ -191,9 +199,9 @@ function RouteComponent() {
     }
   }
 
-  const updateRef = (id: string, ref: HTMLDivElement | null) => {
+  function updateRef(id: string, ref: HTMLDivElement | null) {
     componentRefs.current[id] = ref;
-  };
+  }
 
   // Group drag functionality
   // Store the initial positions when starting a group drag
@@ -294,6 +302,55 @@ function RouteComponent() {
     activeDraggingId.current = null;
   };
 
+  function handleCanvasClick(event: React.MouseEvent) {
+    // Deselect any selected shape when clicking on the canvas
+    const isMultipageHandle =
+      event.target instanceof HTMLElement &&
+      event.target.classList.contains("multipage-handle");
+    const isShape = !(
+      event.target instanceof HTMLElement &&
+      event.target.classList.contains("mouse-follow")
+    ); // hacky way to detect a canvas click;
+    if (isMultipageHandle || isShape) {
+      return;
+    }
+    clearSelection();
+    setDebugPath(null);
+  }
+
+  function handleContextMenu(event: React.MouseEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setContextMenu({ visible: true, x: event.clientX, y: event.clientY });
+  }
+
+  const memoisedCanvas = useMemo(
+    () => (
+      <MemoCanvas
+        shapes={shapes}
+        pageRefList={pageRefList}
+        allShapesRefList={allShapesRefList}
+        canvasRef={canvasRef}
+        canvasPosition={canvasPosition}
+        isHandToolActive={isHandToolActive}
+        handleMouseDown={handleMouseDown}
+        handleMouseMove={handleMouseMove}
+        handleMouseUp={handleMouseUp}
+        handleCanvasClick={handleCanvasClick}
+        handleContextMenu={handleContextMenu}
+        isAltKeyPressed={isAltKeyPressed}
+      />
+    ),
+    [
+      scale,
+      shapes,
+      allShapesRefList,
+      canvasRef,
+      canvasPosition,
+      isHandToolActive,
+      isAltKeyPressed,
+    ]
+  );
+
   return (
     <div
       ref={containerRef}
@@ -307,38 +364,7 @@ function RouteComponent() {
         panning={isHandToolActive}
         shapes={shapes ? shapes : []}
       >
-        <div>
-          {demoShapes.map((shape) => (
-            <ResizeAndDrag
-              key={shape.id}
-              id={shape.id}
-              isSelected={selectedIds.includes(shape.id)}
-              onRefUpdate={updateRef}
-              x={shape.xOffset}
-              y={shape.yOffset}
-              width={shape.width}
-              height={shape.height}
-              selectedIds={selectedIds}
-              setSelectedIds={setSelectedIds}
-              onDragStart={handleDragStart}
-              onDrag={handleDrag}
-              onDragEnd={handleDragEnd}
-              onClick={handleComponentClick}
-              onGroupDrag={handleGroupDrag}
-              position={{ x: shape.xOffset, y: shape.yOffset }}
-            >
-              {shape.type == "button" ? (
-                <div className="relative w-full h-full flex items-center flex-col text-left rounded justify-center bg-white text-black [container-type:size]">
-                  <button className="pointer-events-auto">BUTTON</button>
-                </div>
-              ) : shape.type == "text" ? (
-                <div>SOME TEXT</div>
-              ) : (
-                ""
-              )}
-            </ResizeAndDrag>
-          ))}
-        </div>
+        {memoisedCanvas}
       </ZoomableComponent>
 
       {selectBox && (
