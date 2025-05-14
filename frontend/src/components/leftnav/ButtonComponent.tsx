@@ -1,10 +1,11 @@
-import { useContext, useSyncExternalStore, type MutableRefObject } from "react";
+import { useContext, useSyncExternalStore } from "react";
 import { useCreateShapeMutation } from "../../lib/api/shapes";
 import { ViewContext } from "../zoom/ViewContext";
 import { v4 } from "uuid";
+import type { RefObject } from "react";
 
 export type ComponentProps = {
-  canvasRef: MutableRefObject<HTMLDivElement | null>;
+  canvasRef: RefObject<HTMLDivElement | null>;
   projectId: number;
 };
 
@@ -13,7 +14,7 @@ export const handleDragStart = (event: React.DragEvent, type: string) => {
 };
 
 export default function ButtonComponent(props: {
-  canvasRef: React.RefObject<HTMLDivElement | null>;
+  canvasRef: RefObject<HTMLDivElement | null>;
 }) {
   const { canvasRef } = props;
   const { mutate: handleAddShape } = useCreateShapeMutation();
