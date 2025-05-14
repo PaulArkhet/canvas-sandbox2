@@ -1,7 +1,7 @@
-import type { MutableRefObject } from "react";
+import type { RefObject } from "react";
 
 export type ComponentProps = {
-  canvasRef: MutableRefObject<HTMLDivElement | null>;
+  canvasRef: RefObject<HTMLDivElement | null>;
   projectId: number;
 };
 
@@ -10,7 +10,7 @@ export const handleDragStart = (event: React.DragEvent, type: string) => {
 };
 
 export default function ButtonComponent(props: {
-  canvasRef: React.RefObject<HTMLDivElement | null>;
+  canvasRef: RefObject<HTMLDivElement | null>;
 }) {
   const { canvasRef } = props;
 
