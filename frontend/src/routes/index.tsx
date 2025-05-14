@@ -79,16 +79,16 @@ function RouteComponent() {
   const [demoShapes, setDemoShapes] = useState([
     {
       id: "a",
-      xOffset: 400,
-      yOffset: 200,
+      xOffset: 1400,
+      yOffset: 1200,
       width: 100,
       height: 50,
       type: "button",
     },
     {
       id: "b",
-      xOffset: 600,
-      yOffset: 400,
+      xOffset: 1600,
+      yOffset: 1400,
       width: 100,
       height: 50,
       type: "text",
@@ -114,6 +114,9 @@ function RouteComponent() {
     x: number;
     y: number;
   } | null>(null);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(
+    null
+  );
 
   useEffect(() => {
     return () => {
@@ -134,50 +137,26 @@ function RouteComponent() {
     b: { x: 600, y: 400 },
   });
 
-  function handleMouseDown(e: React.MouseEvent) {
-    if (e.target !== containerRef.current) return;
-    setStartPos({ x: e.clientX, y: e.clientY });
-    setSelectBox({
-      x: e.clientX,
-      y: e.clientY,
-      width: 0,
-      height: 0,
-    });
-
-    // Clear selection if clicking on the background
-    if (!e.ctrlKey && !e.metaKey) {
-      setSelectedIds([]);
+  function handleMouseDown(event: React.MouseEvent) {
+    if (isHandToolActive || event.button === 1) {
+      setDragStart({ x: event.clientX, y: event.clientY });
     }
   }
 
-  function handleMouseMove(e: React.MouseEvent) {
-    if (!startPos) return;
-    const x = Math.min(startPos.x, e.clientX);
-    const y = Math.min(startPos.y, e.clientY);
-    const width = Math.abs(e.clientX - startPos.x);
-    const height = Math.abs(e.clientY - startPos.y);
-    setSelectBox({ x, y, width, height });
+  function handleMouseMove(event: React.MouseEvent) {
+    if (isHandToolActive && dragStart) {
+      const dx = event.clientX - dragStart.x;
+      const dy = event.clientY - dragStart.y;
+      setCanvasPosition((prevPosition) => ({
+        x: prevPosition.x + dx / 2,
+        y: prevPosition.y + dy / 2,
+      }));
+      setDragStart({ x: event.clientX, y: event.clientY });
+    }
   }
 
   function handleMouseUp() {
-    if (!selectBox) return;
-    const selected: string[] = [];
-    Object.entries(componentRefs.current).forEach(([id, el]) => {
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-
-      const intersects =
-        rect.right > selectBox.x &&
-        rect.left < selectBox.x + selectBox.width &&
-        rect.bottom > selectBox.y &&
-        rect.top < selectBox.y + selectBox.height;
-
-      if (intersects) selected.push(id);
-    });
-
-    setSelectedIds(selected);
-    setStartPos(null);
-    setSelectBox(null);
+    setDragStart(null);
   }
 
   function handleGroupDrag(id: string, deltaX: number, deltaY: number) {
@@ -378,7 +357,10 @@ function RouteComponent() {
         panning={isHandToolActive}
         shapes={shapes ? shapes : []}
       >
-        <div>
+        <div
+          className="w-[5000px] h-[5000px] absolute bg-[#2c2c2c] border-white border-[8px] rounded -top-[1000px] -left-[1000px] z-0"
+          ref={canvasRef}
+        >
           {demoShapes.map((shape) => (
             <ResizeAndDrag
               key={shape.id}
@@ -423,7 +405,7 @@ function RouteComponent() {
           }}
         />
       )}
-      <LeftNav />
+      <LeftNav canvasRef={canvasRef} />
       <TopNav />
       <RightNav />
     </div>

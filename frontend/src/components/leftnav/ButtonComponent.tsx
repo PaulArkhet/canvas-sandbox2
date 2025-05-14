@@ -1,4 +1,19 @@
-export default function ButtonComponent() {
+import type { MutableRefObject } from "react";
+
+export type ComponentProps = {
+  canvasRef: MutableRefObject<HTMLDivElement | null>;
+  projectId: number;
+};
+
+export const handleDragStart = (event: React.DragEvent, type: string) => {
+  event.dataTransfer.setData("application/json", JSON.stringify({ type }));
+};
+
+export default function ButtonComponent(props: {
+  canvasRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const { canvasRef } = props;
+
   return (
     <div className="justify-center items-center flex hover:text-[#42A5F5] hover:bg-[#202020] rounded pt-5 transition-all ease-in-out duration-200 cursor-pointer">
       <button>

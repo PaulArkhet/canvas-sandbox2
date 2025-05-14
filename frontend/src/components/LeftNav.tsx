@@ -5,7 +5,9 @@ import caretRight from "/iconcaretright.png";
 import ButtonComponent from "./leftnav/ButtonComponent";
 import TextComponent from "./leftnav/TextComponent";
 
-export default function LeftNav() {
+export default function LeftNav(props: {
+  canvasRef: React.RefObject<HTMLDivElement | null>;
+}) {
   const [searchContent, setSearchContent] = useState("");
   const [showComponents, setShowComponents] = useState(true);
 
@@ -71,7 +73,7 @@ export default function LeftNav() {
         )}
         {showComponents && (
           <div className="grid grid-cols-3 gap-2 pr-4 pb-2">
-            <ButtonComponent />
+            <ButtonComponent canvasRef={props.canvasRef} />
             <TextComponent />
           </div>
         )}
