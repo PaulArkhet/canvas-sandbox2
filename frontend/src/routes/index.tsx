@@ -16,9 +16,14 @@ import { ViewContext } from "../components/zoom/ViewContext";
 import ZoomableComponent from "../components/zoom/ZoomableComponent";
 import useArtboardStore from "../store/ArtboardStore";
 import { useQuery } from "@tanstack/react-query";
-import { getAllShapesQueryOptions } from "../lib/api/shapes";
+import {
+  getAllShapesQueryOptions,
+  useCreateShapeMutation,
+  useShapeBatchOperations,
+} from "../lib/api/shapes";
 import type { Wireframe } from "../../../interfaces/artboard";
 import { MemoCanvas } from "../components/Canvas";
+import { useDeleteMultipagePathMutation } from "../lib/api/multipage-paths";
 
 export type DragDelta = { x: number; y: number };
 
@@ -56,11 +61,165 @@ export function isShapeInPage(shape: Wireframe, page: Wireframe) {
   );
 }
 
+function moveLayer(
+  objects: Wireframe[],
+  selectedIds: Set<string>,
+  direction: "up" | "down" | "front" | "back"
+): Wireframe[] {
+  const objectsCopy = [...objects];
+
+  const selectedObjects = objectsCopy.filter((obj) => selectedIds.has(obj.id));
+  if (selectedObjects.length === 0) {
+    return objects;
+  }
+
+  const pages = objectsCopy.filter((shape) => shape.type === "page");
+  const pageIds = new Set(pages.map((page) => page.id));
+
+  const parentPageMap = new Map<string, string | null>();
+
+  selectedObjects.forEach((selectedObj) => {
+    if (pageIds.has(selectedObj.id)) {
+      parentPageMap.set(selectedObj.id, null);
+      return;
+    }
+
+    const selectedBounds = getBoundsForShape(selectedObj);
+
+    for (const page of pages) {
+      const pageBounds = getBoundsForShape(page);
+      if (isInBoundsOfOuterShape(pageBounds, selectedBounds)) {
+        parentPageMap.set(selectedObj.id, page.id);
+        break;
+      }
+    }
+
+    if (!parentPageMap.has(selectedObj.id)) {
+      parentPageMap.set(selectedObj.id, null);
+    }
+  });
+
+  const sortedObjects = [...objectsCopy].sort((a, b) => a.zIndex - b.zIndex);
+
+  if (direction === "front") {
+    let maxZIndex = Math.max(...sortedObjects.map((obj) => obj.zIndex));
+
+    return sortedObjects.map((obj) => {
+      if (selectedIds.has(obj.id)) {
+        return { ...obj, zIndex: ++maxZIndex };
+      }
+      return { ...obj };
+    });
+  } else if (direction === "back") {
+    const minZIndices = new Map<string, number>();
+
+    selectedObjects.forEach((obj) => {
+      const parentPageId = parentPageMap.get(obj.id);
+
+      if (parentPageId) {
+        const parentPage = sortedObjects.find((p) => p.id === parentPageId);
+        if (parentPage) {
+          minZIndices.set(obj.id, parentPage.zIndex + 1);
+        } else {
+          minZIndices.set(obj.id, 0);
+        }
+      } else {
+        minZIndices.set(obj.id, 0);
+      }
+    });
+
+    const nonSelectedObjects = sortedObjects.filter(
+      (obj) => !selectedIds.has(obj.id)
+    );
+
+    let result = [...nonSelectedObjects];
+
+    selectedObjects.forEach((obj) => {
+      const minZIndex = minZIndices.get(obj.id) || 0;
+
+      let insertIndex = 0;
+      while (
+        insertIndex < result.length &&
+        result[insertIndex].zIndex < minZIndex
+      ) {
+        insertIndex++;
+      }
+
+      result.splice(insertIndex, 0, obj);
+    });
+
+    return result.map((obj, idx) => ({
+      ...obj,
+      zIndex: idx,
+    }));
+  } else {
+    const offset = direction === "up" ? 1 : -1;
+
+    const newPositions = new Map(
+      sortedObjects.map((obj, index) => [
+        obj.id,
+        selectedIds.has(obj.id) ? index + offset : index,
+      ])
+    );
+
+    for (const [id, pos] of newPositions.entries()) {
+      if (selectedIds.has(id)) {
+        const parentPageId = parentPageMap.get(id);
+
+        if (parentPageId) {
+          const parentPageIndex = sortedObjects.findIndex(
+            (obj) => obj.id === parentPageId
+          );
+
+          if (parentPageIndex !== -1 && pos <= parentPageIndex) {
+            newPositions.set(id, parentPageIndex + 1);
+          }
+        }
+      }
+    }
+
+    const clampedPositions = new Map(
+      [...newPositions.entries()].map(([id, pos]) => [
+        id,
+        Math.max(0, Math.min(pos, sortedObjects.length - 1)),
+      ])
+    );
+
+    const reorderedObjects = [...sortedObjects];
+    for (const [id, newPos] of clampedPositions.entries()) {
+      if (selectedIds.has(id)) {
+        const objIndex = reorderedObjects.findIndex((obj) => obj.id === id);
+        const [obj] = reorderedObjects.splice(objIndex, 1);
+        reorderedObjects.splice(newPos, 0, obj);
+      }
+    }
+
+    return reorderedObjects.map((obj, idx) => ({
+      ...obj,
+      zIndex: idx,
+    }));
+  }
+}
+
 export const Route = createFileRoute("/")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  const {
+    setDebugPath,
+    isHandToolActive,
+    toggleHandTool,
+    setIsHandToolActive,
+    handleTimeTravel,
+    selectedShapeIds,
+    clearSelection,
+  } = useArtboardStore();
+  const { data: shapes } = useQuery(getAllShapesQueryOptions());
+  const { mutate: deletePermanentPath } = useDeleteMultipagePathMutation();
+  const { mutate: handleAddShape } = useCreateShapeMutation();
+  const { updateShapes } = useShapeBatchOperations();
+  const [isAltKeyPressed, setIsAltKeyPressed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectBox, setSelectBox] = useState<{
     x: number;
@@ -74,8 +233,6 @@ function RouteComponent() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const componentRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const ctx = useContext(ViewContext)!;
-  const { isHandToolActive, clearSelection, setDebugPath } = useArtboardStore();
-  const { data: shapes } = useQuery(getAllShapesQueryOptions());
   const [demoShapes, setDemoShapes] = useState([
     {
       id: "a",
@@ -103,7 +260,6 @@ function RouteComponent() {
     x: -1000,
     y: -1000,
   });
-  const [isAltKeyPressed, setIsAltKeyPressed] = useState(false);
   const activeDragRef = useRef<ActiveDragState>({
     pageId: null,
     delta: { x: 0, y: 0 },
