@@ -18,6 +18,7 @@ import { findOrthogonalPath } from "../lib/orthogonal-finder";
 import { getMultipageHandlePoint } from "./MultipageHandles";
 import { useQuery } from "@tanstack/react-query";
 import { getMultipagePathsQueryOptions } from "../lib/api/multipage-paths";
+import type { ActiveDragState } from "../routes/index";
 import { useBatchUpdateShapesMutation } from "../lib/api/shapes";
 import { useShallow } from "zustand/react/shallow";
 
@@ -37,6 +38,7 @@ export function Canvas({
   socket,
   handleContextMenu,
   isAltKeyPressed,
+  activeDragRef,
 }: {
   code?: string;
   socket?: Socket;
@@ -52,6 +54,7 @@ export function Canvas({
   handleCanvasClick: (event: React.MouseEvent) => void;
   handleContextMenu: (event: React.MouseEvent<HTMLDivElement>) => void;
   isAltKeyPressed: boolean;
+  activeDragRef: MutableRefObject<ActiveDragState>;
 }) {
   const ctx = useContext(ViewContext);
   if (!ctx) throw new Error("ZoomableComponent must be inside <ViewProvider>");
@@ -81,25 +84,6 @@ export function Canvas({
       temporaryOffset: state.temporaryOffset,
     }))
   );
-
-  const [demoShapes, setDemoShapes] = useState([
-    {
-      id: "a",
-      xOffset: 400,
-      yOffset: 200,
-      width: 100,
-      height: 50,
-      type: "button",
-    },
-    {
-      id: "b",
-      xOffset: 600,
-      yOffset: 400,
-      width: 100,
-      height: 50,
-      type: "text",
-    },
-  ]);
 
   function handleMouseMoveGrid(e: React.MouseEvent<HTMLDivElement>) {
     if (!canvasRef.current || !ctx) return;
@@ -152,7 +136,7 @@ export function Canvas({
   return (
     <div
       id="canvas"
-      className={`w-[5000px] h-[5000px] absolute bg-[#2c2c2c] border-white border-[8px] rounded -top-[1000px] -left-[1000px] z-0 ${isHandToolActive ? "cursor-grab" : "arkhet-cursor"} `}
+      className={`w-[5000px] h-[5000px] absolute bg-[#2c2c2c] border-white border-[8px] rounded -top-[1000px] -left-[1000px] z-0 ${isHandToolActive ? "cursor-grab" : "arkhet-cursor"}`}
       onMouseDown={handleMouseDown}
       onMouseMove={(args) => {
         handleMouseMove(args);
@@ -208,38 +192,25 @@ export function Canvas({
         {shapes &&
           setupArtboardTree(shapes, updateShapes).map((shape) => (
             <div key={shape.id}>
-              <div>
-                {demoShapes.map((shape) => (
-                  <ResizeAndDrag
-                    key={shape.id}
-                    id={shape.id}
-                    isSelected={selectedIds.includes(shape.id)}
-                    onRefUpdate={updateRef}
-                    x={shape.xOffset}
-                    y={shape.yOffset}
-                    width={shape.width}
-                    height={shape.height}
-                    selectedIds={selectedIds}
-                    setSelectedIds={setSelectedIds}
-                    onDragStart={handleDragStart}
-                    onDrag={handleDrag}
-                    onDragEnd={handleDragEnd}
-                    onClick={handleComponentClick}
-                    onGroupDrag={handleGroupDrag}
-                    position={{ x: shape.xOffset, y: shape.yOffset }}
-                  >
-                    {shape.type == "button" ? (
-                      <div className="relative w-full h-full flex items-center flex-col text-left rounded justify-center bg-white text-black [container-type:size]">
-                        <button className="pointer-events-auto">BUTTON</button>
-                      </div>
-                    ) : shape.type == "text" ? (
-                      <div>SOME TEXT</div>
-                    ) : (
-                      ""
-                    )}
-                  </ResizeAndDrag>
-                ))}
-              </div>
+              <MemoDragAndDrop
+                temporaryOffset={
+                  temporaryOffset &&
+                  temporaryOffset.targetShapeIds.find((id) => id === shape.id)
+                    ? { x: temporaryOffset.xOffset, y: temporaryOffset.yOffset }
+                    : undefined
+                }
+                shapes={shapes}
+                handleMouseUp={mouseUpStableRef.current}
+                canvasRef={canvasRef}
+                shape={shape}
+                pageRefList={pageRefList}
+                allShapesRefList={allShapesRefList}
+                isHandToolActive={isHandToolActive}
+                isAltKeyPressed={isAltKeyPressed}
+                activeDragRef={activeDragRef}
+                handleContextMenu={handleContextMenu}
+                scale={scale}
+              />
             </div>
           ))}
       </div>

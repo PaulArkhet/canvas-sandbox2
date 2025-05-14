@@ -22,6 +22,13 @@ import { MemoCanvas } from "../components/Canvas";
 
 export type DragDelta = { x: number; y: number };
 
+export type ActiveDragState = {
+  pageId: string | null;
+  primaryShapeId?: string | null;
+  delta: DragDelta;
+  selectedShapeIds: string[];
+};
+
 export type Bounds = ReturnType<typeof getBoundsForShape>;
 
 export function getBoundsForShape(shape: Wireframe) {
@@ -97,6 +104,11 @@ function RouteComponent() {
     y: -1000,
   });
   const [isAltKeyPressed, setIsAltKeyPressed] = useState(false);
+  const activeDragRef = useRef<ActiveDragState>({
+    pageId: null,
+    delta: { x: 0, y: 0 },
+    selectedShapeIds: [],
+  });
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
     x: number;
@@ -199,9 +211,9 @@ function RouteComponent() {
     }
   }
 
-  function updateRef(id: string, ref: HTMLDivElement | null) {
+  const updateRef = (id: string, ref: HTMLDivElement | null) => {
     componentRefs.current[id] = ref;
-  }
+  };
 
   // Group drag functionality
   // Store the initial positions when starting a group drag
@@ -338,6 +350,7 @@ function RouteComponent() {
         handleCanvasClick={handleCanvasClick}
         handleContextMenu={handleContextMenu}
         isAltKeyPressed={isAltKeyPressed}
+        activeDragRef={activeDragRef}
       />
     ),
     [
@@ -348,6 +361,7 @@ function RouteComponent() {
       canvasPosition,
       isHandToolActive,
       isAltKeyPressed,
+      activeDragRef,
     ]
   );
 
@@ -364,7 +378,38 @@ function RouteComponent() {
         panning={isHandToolActive}
         shapes={shapes ? shapes : []}
       >
-        {memoisedCanvas}
+        <div>
+          {demoShapes.map((shape) => (
+            <ResizeAndDrag
+              key={shape.id}
+              id={shape.id}
+              isSelected={selectedIds.includes(shape.id)}
+              onRefUpdate={updateRef}
+              x={shape.xOffset}
+              y={shape.yOffset}
+              width={shape.width}
+              height={shape.height}
+              selectedIds={selectedIds}
+              setSelectedIds={setSelectedIds}
+              onDragStart={handleDragStart}
+              onDrag={handleDrag}
+              onDragEnd={handleDragEnd}
+              onClick={handleComponentClick}
+              onGroupDrag={handleGroupDrag}
+              position={{ x: shape.xOffset, y: shape.yOffset }}
+            >
+              {shape.type == "button" ? (
+                <div className="relative w-full h-full flex items-center flex-col text-left rounded justify-center bg-white text-black [container-type:size]">
+                  <button className="pointer-events-auto">BUTTON</button>
+                </div>
+              ) : shape.type == "text" ? (
+                <div>SOME TEXT</div>
+              ) : (
+                ""
+              )}
+            </ResizeAndDrag>
+          ))}
+        </div>
       </ZoomableComponent>
 
       {selectBox && (
