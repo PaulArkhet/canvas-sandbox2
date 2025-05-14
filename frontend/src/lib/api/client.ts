@@ -1,7 +1,7 @@
 import { hc, type ClientResponse } from "hono/client";
 import type { ApiRoutes } from "../../../../app";
 
-export const client = hc<ApiRoutes>("https://canvas-sandbox2.onrender.com");
+export const client = hc<ApiRoutes>("http://localhost:3333");
 
 export type ArgumentTypes<F extends Function> = F extends (
   ...args: infer A

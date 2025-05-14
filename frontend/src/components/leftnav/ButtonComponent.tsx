@@ -1,4 +1,7 @@
-import type { MutableRefObject } from "react";
+import { useContext, useSyncExternalStore, type MutableRefObject } from "react";
+import { useCreateShapeMutation } from "../../lib/api/shapes";
+import { ViewContext } from "../zoom/ViewContext";
+import { v4 } from "uuid";
 
 export type ComponentProps = {
   canvasRef: MutableRefObject<HTMLDivElement | null>;
@@ -13,9 +16,32 @@ export default function ButtonComponent(props: {
   canvasRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const { canvasRef } = props;
+  const { mutate: handleAddShape } = useCreateShapeMutation();
+
+  const ctx = useContext(ViewContext);
+  if (!ctx) throw new Error("ZoomableComponent must be inside <ViewProvider>");
+
+  const scale = useSyncExternalStore(
+    ctx.subscribe,
+    () => ctx.getSnapshot().scale
+  );
 
   return (
-    <div className="justify-center items-center flex hover:text-[#42A5F5] hover:bg-[#202020] rounded pt-5 transition-all ease-in-out duration-200 cursor-pointer">
+    <div
+      className="justify-center items-center flex hover:text-[#42A5F5] hover:bg-[#202020] rounded pt-5 transition-all ease-in-out duration-200 cursor-pointer"
+      draggable
+      onDragStart={(e) => {
+        handleDragStart(e, "button");
+      }}
+      onClick={() => {
+        handleAddShape({
+          type: "button",
+          canvasRef,
+          scale: scale,
+          shapeId: v4(),
+        });
+      }}
+    >
       <button>
         <svg
           width="46"

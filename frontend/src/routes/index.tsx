@@ -357,41 +357,7 @@ function RouteComponent() {
         panning={isHandToolActive}
         shapes={shapes ? shapes : []}
       >
-        <div
-          className="w-[5000px] h-[5000px] absolute bg-[#2c2c2c] border-white border-[8px] rounded -top-[1000px] -left-[1000px] z-0"
-          ref={canvasRef}
-        >
-          {demoShapes.map((shape) => (
-            <ResizeAndDrag
-              key={shape.id}
-              id={shape.id}
-              isSelected={selectedIds.includes(shape.id)}
-              onRefUpdate={updateRef}
-              x={shape.xOffset}
-              y={shape.yOffset}
-              width={shape.width}
-              height={shape.height}
-              selectedIds={selectedIds}
-              setSelectedIds={setSelectedIds}
-              onDragStart={handleDragStart}
-              onDrag={handleDrag}
-              onDragEnd={handleDragEnd}
-              onClick={handleComponentClick}
-              onGroupDrag={handleGroupDrag}
-              position={{ x: shape.xOffset, y: shape.yOffset }}
-            >
-              {shape.type == "button" ? (
-                <div className="relative w-full h-full flex items-center flex-col text-left rounded justify-center bg-white text-black [container-type:size]">
-                  <button className="pointer-events-auto">BUTTON</button>
-                </div>
-              ) : shape.type == "text" ? (
-                <div>SOME TEXT</div>
-              ) : (
-                ""
-              )}
-            </ResizeAndDrag>
-          ))}
-        </div>
+        {memoisedCanvas}
       </ZoomableComponent>
 
       {selectBox && (

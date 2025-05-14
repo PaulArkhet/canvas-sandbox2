@@ -31,6 +31,7 @@ import { v4 as uuid } from "uuid";
 import { isShapeInsidePage } from "../utils/findOpenSpace";
 import { useShallow } from "zustand/react/shallow";
 import { RenderShape } from "./RenderShape";
+import { Rnd, type RndDragEvent, type DraggableData } from "react-rnd";
 
 interface MultiDragRef extends ActiveDragState {
   selectedShapeIds: string[];
